@@ -34,7 +34,7 @@ Again you are writing an Ansible playbook file. In one part of that file, a pem 
 
 ### Task 3: 
 
-You have audit log file which has ssh connection logs to your server. However some invalid users try to connect your system. You have been assigned a task to find their names and how many times have they tried to attack your system. Please find it and put it into the `invalid_user.sh`file.
+You have audit log file which has ssh connection logs to your server. However some invalid users try to connect your system. You have been assigned a task to find their names and how many times have they tried to attack your system. Please find it and put it into the `invalid_user.sh`file. 
 
 ## Project Skeleton 
 

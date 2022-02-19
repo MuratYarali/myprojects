@@ -96,10 +96,10 @@ Resources:
         SecurityGroupIds:
           - !GetAtt mySG.GroupId
         TagSpecifications:
-          - ResourceType: instance
-            Tags:
-            - Key: Name
-              Value: !Sub Web Server of ${AWS::StackName} Stack
+         - ResourceType: instance
+           Tags:
+           - Key: Name
+             Value: !Sub Web Server of ${AWS::StackName} Stack 
         UserData: !Base64 |
           #! /bin/bash
           yum update -y

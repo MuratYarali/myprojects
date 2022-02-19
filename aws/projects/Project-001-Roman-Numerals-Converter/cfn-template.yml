@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  The Roman Numerals Converter Application aims to convert the given number to the Roman numerals. The application is to be coded in Python and deployed as a web application with Flask on AWS Elastic Compute Cloud (EC2) Instance using AWS Cloudformation and CLI Services.
+  
+Parameters:
+
+Mappings:
+  RegionImageMap:
+    us-east-1:
+      AMI: ami-0dc2d3e4c0f9ebd18
+    us-east-2:
+      AMI: ami-0233c2d874b811deb
+    us-west-1:
+      AMI: ami-0ed05376b59b90e46
+    us-west-2:
+      AMI: ami-0dc8f589abe99f538
+    eu-west-1:
+      AMI: ami-058b1b7fe545997ae
+  
+Resources:
+  myLT:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap
+          - RegionImageMap
+          - !Ref 'AWS::Region'
+          - AMI
+        InstanceType: !Ref myIT
+        KeyName: !Ref myKP
+        SecurityGroupIds:
+          - !GetAtt mySG.GroupId
+        UserData: !Base64 |
+          #!/bin/bash
+          yum update -y
+          pip3 install flask -y
+          wget https://raw.githubusercontent.com/MuratYarali/AWS-DevOps/main/aws/projects/Project-001-Roman-Numerals-Converter/app.py?token=GHSAT0AAAAAABQOAY5BXTWWGERKUHGVAL5SYQRJE4Q
+          mkdir templates && cd templates
+          
+
+          
+
+
+
+
+
+
+
+  mySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enables SSH and HTTP # Required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      VpcId: "String"
+  
+Outputs:

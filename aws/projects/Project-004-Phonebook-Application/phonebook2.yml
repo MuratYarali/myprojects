@@ -1,0 +1,226 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  The Phonebook Application aims to create a phonebook application in Python and deployed as a web application with Flask on AWS Application Load Balancer with Auto Scaling Group of Elastic Compute Cloud (EC2) Instances and Relational Database Service (RDS) using AWS Cloudformation Service.
+
+Parameters:
+  paramVPC:
+    Description: Select Your VPC 
+    Type: AWS::EC2::VPC::Id
+ 
+  paramSubnet:
+    Description: Select at least 2 subnet
+    Type: List<AWS::EC2::Subnet::Id>
+  
+  paramKeyName:
+    Description: Select your KEY
+    Type: AWS::EC2::KeyPair::KeyName
+
+  paramInsType:
+    Description: Select instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+
+  paramDBName:
+    Description: Enter the name of database
+    Type: String
+    Default: clarusway_phonebook
+
+  paramDBEngine:
+    Description: Enter the db engine
+    Type: String
+    Default: MySQL
+  
+  paramDBUserName:
+    NoEcho: 'true'
+    Description: Username for MySQL database access
+    Type: String
+  
+  paramDBPassword:
+    NoEcho: 'true'
+    Description: Password MySQL database access
+    Type: String
+
+Mappings:
+  RegionImageMap:
+    us-east-1:
+      AMI: ami-033b95fb8079dc481
+    us-east-2:
+      AMI: ami-0b614a5d911900a9b
+    us-west-1:
+      AMI: ami-0ed05376b59b90e46
+    us-west-2:
+      AMI: ami-0dc8f589abe99f538
+    eu-west-1:
+      AMI: ami-058b1b7fe545997ae
+
+Resources:
+  securityGroupAppLoadBalancer:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP protocol # Required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref paramVPC # vpc reference
+      Tags:
+        - Key: Name
+          Value: SecGrpAppLoadBalancer
+
+  securityGroupEC2s:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP from ALBsecgroup # Required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt securityGroupAppLoadBalancer.GroupId
+      VpcId: !Ref paramVPC # vpc reference
+      Tags:
+        - Key: Name
+          Value: SecGrpEC2s
+
+  securityGroupRDSInstance:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable MySql port from EC2s # Required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !GetAtt securityGroupEC2s.GroupId
+      VpcId: !Ref paramVPC # vpc reference
+      Tags:
+        - Key: Name
+          Value: SecGrpRDSInstance
+
+  targetGroupPhoneBookApp:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref paramVPC
+
+  loadBalancerPhoneBookApp:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - !GetAtt securityGroupAppLoadBalancer.GroupId
+      Subnets: !Ref paramSubnet
+      Type: application
+
+  listenerPhoneBookAppALBTG:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: # Required
+        - Type: forward
+          TargetGroupArn: !Ref targetGroupPhoneBookApp
+      LoadBalancerArn: !Ref loadBalancerPhoneBookApp # Required
+      Port: 80
+      Protocol: HTTP
+
+  autoScalingGrpPhoneBookApp:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones: !GetAZs 
+      DesiredCapacity: 2
+      HealthCheckGracePeriod: 90
+      HealthCheckType: ELB
+      LaunchTemplate:
+        LaunchTemplateId: !Ref launchTemplatePhoneBookApp
+        Version: !GetAtt launchTemplatePhoneBookApp.LatestVersionNumber
+      MaxSize: "3" # Required
+      MinSize: "1" # Required
+      TargetGroupARNs:
+        - !Ref targetGroupPhoneBookApp
+
+  policyCPUPhoneBookApp:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref autoScalingGrpPhoneBookApp # Required
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 60.0
+
+  launchTemplatePhoneBookApp:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap 
+          - RegionImageMap
+          - !Ref AWS::Region
+          - AMI
+        InstanceType: !Ref paramInsType
+        KeyName: !Ref paramKeyName
+        SecurityGroupIds:
+          - !GetAtt securityGroupEC2s.GroupId
+        TagSpecifications:
+          - ResourceType: instance 
+            Tags: 
+              - Key: Name
+                Value: !Sub Web Server of ${AWS::StackName} 
+        UserData: 
+          Fn::Base64: 
+            Fn::Sub:
+              - |
+                #!/bin/bash
+                yum update -y
+                yum install python3 -y
+                pip3 install flask
+                pip3 install flask-mysql
+                pip3 install sqlalchemy
+                pip3 install Flask-SQLAlchemy
+                cd /home/ec2-user
+                echo "${RDSUriMySql}" > dbserver.endpoint
+                chmod 777 dbserver.endpoint
+                FOLDER="https://raw.githubusercontent.com/isatemelci1/aws/main/Projects/Project-004-Phonebook-Application"
+                curl $FOLDER/phonebook-app.py -o phonebook-app.py
+                mkdir templates && cd templates
+                curl $FOLDER/templates/add-update.html -o add-update.html
+                curl $FOLDER/templates/index.html -o index.html
+                curl $FOLDER/templates/delete.html -o delete.html
+                cd ..
+                python3 phonebook-app.py
+              - RDSUriMySql: !GetAtt dbRDSPhoneBookApp.Endpoint.Address
+
+  dbRDSPhoneBookApp:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t2.micro # Required
+      DBInstanceIdentifier: phone-appdb
+      DBName: !Ref paramDBName
+      DeleteAutomatedBackups: true
+      Engine: !Ref paramDBEngine
+      EngineVersion: "8.0.19"
+      MasterUserPassword: !Ref paramDBPassword
+      MasterUsername: !Ref paramDBUserName
+      VPCSecurityGroups:
+        - !GetAtt securityGroupRDSInstance.GroupId           
+              
+Outputs:
+  AppUrl:
+    Description: PhoneBookURL
+    Value: !Join
+      - ""
+      - - "http://"
+        - !GetAtt loadBalancerPhoneBookApp.DNSName 
+
+  RDSEndPoint:
+    Description: 'The RDS Endpoint of MySQL DB'
+    Value: !GetAtt dbRDSPhoneBookApp.Endpoint.Address

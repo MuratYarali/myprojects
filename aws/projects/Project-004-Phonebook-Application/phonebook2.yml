@@ -188,7 +188,7 @@ Resources:
                 cd /home/ec2-user
                 echo "${RDSUriMySql}" > dbserver.endpoint
                 chmod 777 dbserver.endpoint
-                FOLDER="https://raw.githubusercontent.com/isatemelci1/aws/main/Projects/Project-004-Phonebook-Application"
+                FOLDER="https://raw.githubusercontent.com/MuratYarali/my-projects/main/aws/projects/Project-004-Phonebook-Application"
                 curl $FOLDER/phonebook-app.py -o phonebook-app.py
                 mkdir templates && cd templates
                 curl $FOLDER/templates/add-update.html -o add-update.html

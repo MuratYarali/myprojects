@@ -197,7 +197,7 @@ Resources:
     Properties:
       AllocatedStorage: 20
       DBInstanceClass: db.t2.micro # Required
-      DBInstanceIdentifier: phone-appdb
+      DBInstanceIdentifier: phone-appdb11
       DBName: !Ref paramDBName
       DeleteAutomatedBackups: true
       Engine: !Ref paramDBEngine

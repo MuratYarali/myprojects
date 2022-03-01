@@ -1,0 +1,228 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  The Phonebook Application aims to create a phonebook application in Python and deployed as a web application with Flask on AWS Application Load Balancer with Auto Scaling Group of Elastic Compute Cloud (EC2) Instances and Relational Database Service (RDS) using AWS Cloudformation Service.
+  
+Parameters:
+  paramVPC:
+    Description: Select Your VPC
+    Type: AWS::EC2::VPC::Id
+
+  paramSubnet:
+    Description: Select at least 2 subnet
+    Type: List<AWS::EC2::Subnet::Id>
+  
+  paramInsType:
+    Description: Select instance type
+    Type: String
+    Default: t2.micro 
+    AllowedValues: 
+     - t2.micro
+     - t3.micro
+     - t2.nano
+     - t3.nano
+
+  paramKeyName:
+    Description: Select Your Key
+    Type: AWS::EC2::KeyPair::KeyName
+
+  paramDBName:
+    Description: Enter the name of database
+    Type: String
+    Default: clarusway_phonebook
+
+  paramDBEngine:
+    Description: Enter the db engine
+    Type: String
+    Default: MySQL
+  
+  paramDBUserName:
+    NoEcho: 'true'
+    Description: Username for MySQL database access
+    Type: String
+  
+  paramDBPassword:
+    NoEcho: 'true'
+    Description: Password MySQL database access
+    Type: String
+  
+Mappings:
+  RegionImageMap:
+    us-east-1:
+      AMI: ami-0dc2d3e4c0f9ebd18
+    us-east-2:
+      AMI: ami-0233c2d874b811deb
+    us-west-1:
+      AMI: ami-0ed05376b59b90e46
+    us-west-2:
+      AMI: ami-0dc8f589abe99f538
+    eu-west-1:
+      AMI: ami-058b1b7fe545997ae
+  
+Resources:
+  secGrpAPL:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP protocol for APL # Required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: secGrpAPL
+      VpcId: !Ref paramVPC
+
+  secGrpEC2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP from secGrpALB and SSH # Required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt secGrpAPL.GroupId
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: secGrpEC2
+      VpcId: !Ref paramVPC
+
+  secGrpRDS:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable MySql port from EC2s # Required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !GetAtt secGrpEC2.GroupId
+      Tags:
+        - Key: Name
+          Value: SecGrpRDS
+      VpcId: !Ref paramVPC
+
+  targetGrp:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref paramVPC
+
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - !GetAtt secGrpAPL.GroupId
+      Subnets: !Ref paramSubnet
+      Type: application
+  
+  listenerALBTG:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: # Required
+        - Type: forward
+          TargetGroupArn: !Ref targetGrp
+      LoadBalancerArn: !Ref ALB # Required
+      Port: 80
+      Protocol: HTTP
+
+  ASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones: !GetAZs 
+      DesiredCapacity: 2
+      HealthCheckGracePeriod: 90
+      HealthCheckType: ELB
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LT
+        Version: !GetAtt LT.LatestVersionNumber
+      MaxSize: 3 # Required
+      MinSize: 1 # Required
+      TargetGroupARNs:
+        - !Ref targetGrp
+
+  policyASG:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref ASG # Required
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 60.0
+
+  LT:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap 
+          - RegionImageMap
+          - !Ref AWS::Region
+          - AMI
+        InstanceType: !Ref paramInsType
+        KeyName: !Ref paramKeyName
+        SecurityGroupIds:
+          - !GetAtt secGrpEC2.GroupId
+        TagSpecifications:
+          - ResourceType: instance 
+            Tags: 
+              - Key: Name
+                Value: !Sub Web Server of ${AWS::StackName} Stack
+        UserData:
+          Fn::Base64:
+            Fn::Sub:
+              - |
+                #!/bin/bash
+                yum update -y
+                yum install python3 -y
+                pip3 install flask
+                pip3 install flask-mysql
+                pip3 install sqlalchemy
+                pip3 install Flask-SQLAlchemy
+                cd /home/ec2-user
+                echo "${RDSUriMySql}" > dbserver.endpoint
+                chmod 777 dbserver.endpoint
+                FOLDER="https://raw.githubusercontent.com/MuratYarali/my-projects/main/aws/projects/Project-004-Phonebook-Application"
+                curl $FOLDER/phonebook-app.py -o phonebook-app.py
+                mkdir templates && cd templates
+                curl $FOLDER/templates/add-update.html -o add-update.html
+                curl $FOLDER/templates/index.html -o index.html
+                curl $FOLDER/templates/delete.html -o delete.html
+                cd ..
+                python3 phonebook-app.py
+              - RDSUriMySql: !GetAtt dbRDS.Endpoint.Address
+
+  dbRDS:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBInstanceClass: db.t2.micro # Required
+      DBInstanceIdentifier: phone-appdb
+      DBName: !Ref paramDBName
+      DeleteAutomatedBackups: true
+      Engine: !Ref paramDBEngine
+      EngineVersion: "8.0.19"
+      MasterUserPassword: !Ref paramDBPassword
+      MasterUsername: !Ref paramDBUserName
+      VPCSecurityGroups:
+        - !GetAtt secGrpRDS.GroupId
+
+Outputs:
+  AppUrl:
+    Description: PhoneBookURL
+    Value: !Join
+      - ""
+      - - "http://"
+        - !GetAtt ALB.DNSName 
+
+  RDSEndPoint:
+    Description: 'The RDS Endpoint of MySQL DB'
+    Value: !GetAtt dbRDS.Endpoint.Address

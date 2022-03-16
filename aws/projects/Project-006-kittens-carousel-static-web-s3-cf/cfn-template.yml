@@ -1,9 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Kittens Carousel is a static website application deployed on AWS Simple Storage Service (S3),
-  served through Cloudfront and Route 53 using AWS Cloudformation Service.
+  Cloudformation Template for kittens carousel static website deploy on s3. cloudfront and route 53
 Parameters:
-
   DomainName:
     Description: DNS Name of existing Amazon Route 53 hosted zone ex. clarusway.us
     Type: AWS::Route53::HostedZone::Id
@@ -57,30 +55,56 @@ Resources:
           HostedZoneId: !Ref DomainName
       ValidationMethod: DNS
 
+  KittensCloudfront:
+    Type: "AWS::CloudFront::Distribution" 
+    Properties:
+      DistributionConfig:
+        Aliases:
+        - !Ref KittensDomainName 
+        Comment: Cloudfront Distribution pointing to Kittens S3 bucket
+        DefaultCacheBehavior:
+          AllowedMethods:  
+          - GET
+          - HEAD
+          Compress: true
+          ForwardedValues: 
+            QueryString: true 
+            Cookies:
+              Forward: none 
+          TargetOriginId: KittensOrigin  
+          ViewerProtocolPolicy: allow-all 
+        DefaultRootObject: index.html
+        Enabled: true
+        HttpVersion: 'http2'
+        Origins: 
+        - DomainName: !Select [2, !Split ["/", !GetAtt KittensBucket.WebsiteURL]] 
+          Id: KittensOrigin
+          CustomOriginConfig: 
+            OriginProtocolPolicy: http-only 
+        PriceClass: PriceClass_All
+        ViewerCertificate:  
+          AcmCertificateArn: !Ref KittensCertificate
+          SslSupportMethod: sni-only
+
   KittenDNSName:
   Type: AWS::Route53::RecordSetGroup
   Properties:
-    Comment: Creating records for Kittens WEb Site
+    Comment: Creating records for Kittens Web Site
     HostedZoneId: !Ref DomainName
     RecordSets: 
         - Name: !Ref KittensDomainName
           Type: A
           AliasTarget:
-            HostedZoneId: !Ref DomainName
+            HostedZoneId: Z05779023PSDEC36VHLJE
             DNSName: !GetAtt KittensCloudfront.DomainName
 
-
-
-
 Outputs:
-  WebsiteURL:
-    Value: !GetAtt KittensS3Bucket.WebsiteURL
-    Description: URL for website hosted on S3
-  S3BucketSecureURL:
-    Value: !Join
-      - ''
-      - - 'https://'
-        - !GetAtt
-          - KittensS3Bucket
-          - DomainName
-    Description: Name of S3 bucket to hold website content
+  BucketName: 
+    Description: S3 Bucket URL for Kittens Website
+    Value: !GetAtt KittensBucket.WebsiteURL
+  CloudfrontEndpoint:
+    Description: Endpoint for Kittens Cloudfront
+    Value: !GetAtt KittensCloudfront.DomainName
+  FullDomainName:
+    Description: Full Domain Name of my Application
+    Value: !Ref KittensDomainName

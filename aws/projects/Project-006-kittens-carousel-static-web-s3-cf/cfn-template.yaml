@@ -1,60 +1,44 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Cloudformation Template for kittens carousel static website deploy on s3. cloudfront and route 53
+  Cloudformation Template for kittens carousel static website deploy on s3 through cloudfront and route 53
+
 Parameters:
   DomainName:
-    Description: DNS Name of existing Amazon Route 53 hosted zone ex. clarusway.us
+    Description: DNS Name of existing Amazon Route 53 hosted zone. exp. clarusway.us
     Type: AWS::Route53::HostedZone::Id
-
   KittensDomainName:
     Description: Full domain name for the App. ex. kittens.clarusway.us
     Type: String
     AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
 
 Resources:
-
-  KittensS3Bucket:
-    Type: AWS::S3::Bucket
+  KittensBucket:
+    Type: "AWS::S3::Bucket"
     Properties:
+      AccessControl: PublicRead
       BucketName: !Ref KittensDomainName
-      OwnershipControls:
-        Rules:
-          - ObjectOwnership: BucketOwnerEnforced
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false
       WebsiteConfiguration:
         IndexDocument: index.html
-
   KittensBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref KittensS3Bucket # Required
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - 's3:GetObject'
+      Bucket: !Ref KittensBucket 
+      PolicyDocument: 
+        Statement: 
+          - Sid: PublicReadGetObject
             Effect: Allow
-            Resource: !Join
-              - ''
-              - - 'arn:aws:s3:::'
-                - !Ref KittensS3Bucket
-                - /*
             Principal: '*'
-
+            Action: s3:GetObject
+            Resource: !Join ['', ['arn:aws:s3:::', !Ref 'KittensBucket', /*]] # 
   KittensCertificate:
-    Type: AWS::CertificateManager::Certificate
+    Type: "AWS::CertificateManager::Certificate"
     Properties:
-      CertificateTransparencyLoggingPreference: ENABLED
-      DomainName: !Ref KittensDomainName # Required
+      CertificateTransparencyLoggingPreference: ENABLED 
+      DomainName: !Ref KittensDomainName 
       DomainValidationOptions:
         - DomainName: !Ref KittensDomainName
           HostedZoneId: !Ref DomainName
       ValidationMethod: DNS
-
   KittensCloudfront:
     Type: "AWS::CloudFront::Distribution" 
     Properties:
@@ -84,20 +68,17 @@ Resources:
         PriceClass: PriceClass_All
         ViewerCertificate:  
           AcmCertificateArn: !Ref KittensCertificate
-          SslSupportMethod: sni-only
-
-  KittenDNSName:
-  Type: AWS::Route53::RecordSetGroup
-  Properties:
-    Comment: Creating records for Kittens Web Site
-    HostedZoneId: !Ref DomainName
-    RecordSets: 
+          SslSupportMethod: sni-only 
+  KittenDNSName: 
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !Ref DomainName 
+      RecordSets: 
         - Name: !Ref KittensDomainName
           Type: A
           AliasTarget:
-            HostedZoneId: Z05779023PSDEC36VHLJE
+            HostedZoneId: Z2FDTNDATAQYW2 
             DNSName: !GetAtt KittensCloudfront.DomainName
-
 Outputs:
   BucketName: 
     Description: S3 Bucket URL for Kittens Website

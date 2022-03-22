@@ -139,7 +139,7 @@ Keep it as is
 25. Template version description
 
 
-V1 nginx
+V2 nginx
 
 
 26. Key pair
@@ -152,7 +152,7 @@ Select your .pem file name
 
 
 Key             : Name
-Value           : Nginx-Webserver-V2
+Value           : Webserver-V2
 Resource type   : Instance
 
 

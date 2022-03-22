@@ -153,7 +153,8 @@ unzip sampledata.zip
 
   - Change the query source from `Reply` to `PostedBy-Message-Index`
 
-  - For the Partition key, enter `User A` as the value.
+  - For the Partition key, enter `
+  ` as the value.
 
   - Click `Run`. (Only the items that match your query criteria are returned from the `PostedBy-Message-Index`)
 

@@ -49,8 +49,7 @@ systemctl enable mariadb
 
 # 4. Control the instance status.
 
-# 5. To establish a more secure connection between the Wordpress instance and the DB instance, configure  
-# the DB instance security group inbound rule to ensure it only permits Wordpress instance security group to access.
+# 5. To establish a more secure connection between the Wordpress instance and the DB instance, configure the DB instance security group inbound rule to ensure it only permits Wordpress instance security group to access.
 
 Rule: Mysql 3306, SSH 22  >>>>>> "anywhere (0:/00000)"
 

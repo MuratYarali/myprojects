@@ -47,7 +47,7 @@ sudo yum update -y
 2. Install the Nginx Web Server.
 
 
-sudo amazon-linux-extras install nginx
+sudo amazon-linux-extras install nginx1.12
 
 
 

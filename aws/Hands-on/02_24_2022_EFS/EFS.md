@@ -164,6 +164,9 @@ sudo hostnamectl set-hostname First
 ```text
 sudo yum install -y amazon-efs-utils
 ```
+```Change Hostname as First``
+sudo hostnamectl set-hostname First
+bash
 
 - Create Mounting point 
 
@@ -224,6 +227,10 @@ sudo hostnamectl set-hostname Second
 
 ```text
 sudo yum install -y amazon-efs-utils
+
+```Change Hostname as Second``
+sudo hostnamectl set-hostname Second
+bash
 ```
 
 - Create Mounting point 
@@ -304,6 +311,10 @@ sudo hostnamectl set-hostname Third
 
 ```text
 ssh -i .....pem ec2-user@..................
+
+```Change Hostname as Third``
+sudo hostnamectl set-hostname Third
+bash
 ```
 - Go to the directory of mount target 
 ```text
@@ -327,7 +338,7 @@ CTRL X+Y
 ```
 - Check the example.txt
 
-```text
+```textexit
 cat example.txt
 
 "hello from first EC2-1"

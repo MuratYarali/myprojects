@@ -173,6 +173,7 @@ mysql -h Your RDS Endpoint -u admin -p
 ```sql
 SHOW DATABASES;
 ```
+CREATE DATABASE clarusway;
 
 - Choose a database 
 

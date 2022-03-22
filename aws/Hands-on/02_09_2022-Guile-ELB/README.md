@@ -136,7 +136,7 @@ echo "<html>
     <title> Congratulations! You have created an instance from Launch Template</title>
 </head>
 <body>
-    <h1>This web server is launched from launch template by YOUR_NAME</h1>
+    <h1>This web server is launched from launch template by Murat</h1>
     <p>This instance is created at <b>$DATE_TIME</b></p>
     <p>Private IP address of this instance is <b>$PRIVATE_IP</b></p>
     <p>Public IP address of this instance is <b>$PUBLIC_IP</b></p>

@@ -1,0 +1,37 @@
+Clean-up
+-------------------
+1. CloudFront>>>>>Disable>>>>>>Delete
+2. RDS 
+3. RDS Subnet Group (After RDS Deleted)
+4. Lambda Function
+5. DynamoDB
+6. R53 healthcheck
+7. R53 failover records
+8. S3 buckets (first objects)
+9. IAM roles
+10. NAT instance >>>>>terminate
+11. ALB
+12. TG
+13. LT
+14. ASG
+15. Endpoint
+16. internet gateway>>>>>detach>>>>>delete
+17. subnets
+18. private RT
+19. VPC
+
+
+
+1. Auto Scaling
+2. Load Balancer
+3. Target Group
+4. RDS önce kendisi sonra Subnet Groups
+5. CloudFront önce disable biraz bekle, sonra sil..
+6. Nat-Instance terminate
+7. Lambda Function
+8. S3 Buckets lar önce Empty sonra Delete
+9. Route 53 Records lar.. NS ve SOA harici..
+10. IAM Role ler.. oluşturulma saatine bakıp silinebilir.. (3-4 hr ago yazar)
+11. VPC --> Sec grouplar, nat gateway, Subnetler vs.. silinecek bunula beraber
+12. Launch Template
+13. SNS de Topics ve Subscription lar..

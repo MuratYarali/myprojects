@@ -1,6 +1,6 @@
 # Hands-on Lambda-01 : Lambda Function and API Gateway.
 
-The topics for this hands-on session will be AWS Lambda, function as a service (FaaS). During this Playground we will create two AWS S3 Buckets and using AWS Lambda to synchronize them. In addition, We will show the association between Lambda and API Gateway.
+The topics for this hands-on session will be AWS Lambda, function as a service (FaaS). During this Playground we will create two AWS S3 Buckets and using AWS Lambda to synchronize them. In addition, We will show tje association between Lambda and API Gateway.
 
 ## Learning Outcomes
 
@@ -88,7 +88,20 @@ STEP 2: Create Lambda Function
   
 ```
 
-STEP 3: Create Function Code
+STEP 3: Setting Trigger Event
+
+- Go to Configuration sub-menu and click AddTrigger on Designer  
+```
+Trigger Configuration : S3
+
+- Bucket              : clarusway.source.lambda
+
+- Event Type          : All object create events
+
+- Acknowledge         : checked
+```
+
+STEP 4: Create Function Code
 
 - Go to the Function Code sub-menu and paste code seen below:
 
@@ -125,20 +138,6 @@ def lambda_handler(event, context):
 ```
 
 - Click "DEPLOY" button
-
-
-STEP 4: Setting Trigger Event
-
-- Go to Configuration sub-menu and click AddTrigger on Designer  
-```
-Trigger Configuration : S3
-
-- Bucket              : clarusway.source.lambda
-
-- Event Type          : All object create events
-
-- Acknowledge         : checked
-```
 
 STEP 5: Testing S3 Bucket Synchronization
 

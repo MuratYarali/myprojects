@@ -21,7 +21,6 @@ Clean-up
 19. VPC
 
 
-
 1. Auto Scaling
 2. Load Balancer
 3. Target Group

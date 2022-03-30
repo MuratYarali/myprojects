@@ -129,7 +129,8 @@ Go to the S3 Consol and lets create two buckets.
 
 - Click Create Bucket
 ```text
-Bucket Name : i
+Bucket Name : 
+
 Region      : N.Virginia
 Object Ownership
     - ACLs enabled

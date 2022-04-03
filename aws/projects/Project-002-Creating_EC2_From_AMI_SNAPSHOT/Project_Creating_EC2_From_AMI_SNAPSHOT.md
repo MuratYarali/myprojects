@@ -4,7 +4,7 @@ Purpose of the this project is to learn how to take a snapshot of EC2 instance, 
 
 ## Learning Outcomes
 
-- At the end of the this hands-on training, students will be able to;
+- At the end of the project, following topics are covered;
 
 - take snapshots of EC2 instance and volume on AWS console.
 

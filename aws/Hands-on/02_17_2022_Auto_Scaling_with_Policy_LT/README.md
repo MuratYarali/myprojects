@@ -459,7 +459,7 @@ Step 1: Create `Add-Policy`;
 - Select `Simple Scaling` as Policy Type
 
 ```text
-Scaling Policy Name : First Scaling Policy-Remove
+Scaling Policy Name : First Scaling Policy-Add
 ```
 
 - Open  `Create a CloudWatch Alarm` in `new window` 
@@ -479,7 +479,7 @@ Period                : 1 minute
 ```text
 Threshold Type              : "Static"
 
-Whenever CPUUtilization is  : Select Lower
+Whenever CPUUtilization is  : Select Smaller
 
 Define the threshold value  :  30 
 ```
@@ -503,7 +503,7 @@ Alarm description - optional    : Auto Scaling-remove
 
 - Go back to Autoscaling page and refresh the cloudwatch alarm
 
-- Select `Auto Scaling-Remove` as Cloudwatch Alarm
+- Select `Auto Scaling-Add` as Cloudwatch Alarm
 
 - Take the Action :
 

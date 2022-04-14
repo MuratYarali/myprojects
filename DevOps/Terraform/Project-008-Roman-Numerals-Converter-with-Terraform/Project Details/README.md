@@ -1,6 +1,6 @@
-# Project-001 : Roman Numerals Converter Application (Python Flask) deployed on AWS EC2 with Terraform
+# Project-001 : Roman Numerals Converter Application (Python Flask) deployed on AWS EC2 with Terraform Configuration
 ## Description
-The Roman Numerals Converter Application aims to convert the given number to the Roman numerals. The application is to be coded in Python and deployed as a web application with Flask on AWS Elastic Compute Cloud (EC2) Instance using Terraform 
+The Roman Numerals Converter Application aims to convert the given number to the Roman numerals. The application is to be coded in Python and deployed as a web application with Flask on AWS Elastic Compute Cloud (EC2) Instance that creadet by Terraform Configuration
 
 ## Problem Statement
 

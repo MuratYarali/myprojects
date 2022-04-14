@@ -123,7 +123,7 @@ wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/local/Local
 service httpd start
 
 ```
-5. Create "Windows" instance in VPC of  "clarus-vpc-a" named "Windows"
+4. Create "Windows" instance in VPC of  "clarus-vpc-a" named "Windows"
 
 ```bash 
 Region: "N.Virginia"
@@ -216,7 +216,7 @@ click create and show that the status is unhealthy approximately after 90 second
 
 - Got to the hosted zone and select the public hosted zone of our domain name
 
-- Clear all the record sets except NS and SOA
+- Clear all teh record sets except NS and SOA
 
 - Click create record
 
@@ -382,7 +382,7 @@ button
 
 - Show that NS and SOA records automatically created. 
 
-### STEP 2: Creating in A record with "www" in Private Hosted Zone
+### STEP 2: Creating in A record with "wwww" in Private Hosted Zone
 
 - Go  to "PRIVATE" Hosted Zone 
 - Create A record in "PRIVATE" Hosted Zone 
@@ -409,7 +409,7 @@ Value/Route traffic to :
 Routing: "Simple"
 ```
 - go to "Window" instance and connect it with RDP
-- open the Internet Explorer of "Windows" instance 
+- open the Internet Explorer of "Window" instance 
 - type "www.clarusway.us". show which content is seen "local instance content" in VPC 
 - go to the public browser than type browser: "www.clarusway.us" than show that, N.Virginia instance is seen on public internet.
 

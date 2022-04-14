@@ -80,7 +80,6 @@ systemctl enable httpd
   - Go to S3 service and create a bucket with sub-domain name: "www.[your sub-domain name].net"
   - Public Access "Enabled"
   - Upload Files named "index.html" and "sorry.jpg" in "s3.bucket.www" folder
-  - Properties >>> Static website hosting >>> enable
   - Permissions>>> Bucket Policy >>> Paste bucket Policy
 ```bash
 {

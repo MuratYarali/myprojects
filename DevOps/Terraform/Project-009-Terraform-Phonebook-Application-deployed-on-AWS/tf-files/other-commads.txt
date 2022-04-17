@@ -1,0 +1,3 @@
+mkdir tf-files && cd tf-files && touch main.tf outputs.tf provider.tf sec-gr.tf user-data.sh
+
+aws ec2 describe-subnets --no-paginate --filters "Name=default-for-az,Values=true" | egrep "(VpcId)|(SubnetId)"

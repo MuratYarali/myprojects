@@ -3,19 +3,28 @@
 //allowing SSH (22) and HTTP (80) connections from anywhere.
 //User needs to select appropriate key name when launching the instance.
 
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "4.9.0"
+    }
+  }
+}
+
 provider "aws" {
-  region = "us-east-1"
-  access_key = ""
-  secret_key = ""
+  region     = "us-east-1"
+  # access_key = ""
+  # secret_key = ""
   //  If you have entered your credentials in AWS CLI before, you do not need to use these arguments.
 }
 
 resource "aws_instance" "docker-server" {
-  ami             = "ami-02e136e904f3da870"
-  instance_type   = "t2.micro"
-  key_name        = "personal-aws"
+  ami           = "ami-02e136e904f3da870"
+  instance_type = "t2.micro"
+  key_name      = "mk"
   //  Write your pem file name
-  security_groups = ["sec-group"]
+  vpc_security_group_ids = [aws_security_group.sec-gr.id]
   tags = {
     Name = "docker-compose-instance-1"
   }
@@ -36,32 +45,32 @@ resource "aws_instance" "docker-server" {
 }
 
 
-  resource "aws_security_group" "sec-gr" {
-    name = "docker-compose-sec-group"
-    tags = {
-      Name = "docker-compose-sec-group"
-    }
-    ingress {
-      from_port   = 80
-      protocol    = "tcp"
-      to_port     = 80
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    ingress {
-      from_port   = 22
-      protocol    = "tcp"
-      to_port     = 22
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    egress {
-      from_port   = 0
-      protocol    = -1
-      to_port     = 0
-      cidr_blocks = ["0.0.0.0/0"]
-    }
+resource "aws_security_group" "sec-gr" {
+  name = "docker-compose-sec-group"
+  tags = {
+    Name = "docker-compose-sec-group"
   }
+  ingress {
+    from_port   = 80
+    protocol    = "tcp"
+    to_port     = 80
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    protocol    = "tcp"
+    to_port     = 22
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    protocol    = -1
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 output "docker-compose-public-ip" {
-  value = aws_instance.docker-server.public_ip 
+  value = aws_instance.docker-server.public_ip
 }

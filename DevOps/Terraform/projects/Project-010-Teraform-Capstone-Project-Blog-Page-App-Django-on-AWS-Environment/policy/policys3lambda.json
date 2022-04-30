@@ -9,7 +9,7 @@
                 "s3:GetObject",
                 "s3:GetObjectVersion"
             ],
-            "Resource": "arn:aws:s3:::meleksblog/*"
+            "Resource": "arn:aws:s3:::muratsblog/*"
         }
     ]
 }

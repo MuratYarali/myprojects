@@ -41,11 +41,11 @@ variable "subnet_cidr_private" {
 }
 
 variable "blog-bucket" {
-  default = "meleksblog"      #  PLEASE ENTER YOUR FIRST BUCKET NAME
+  default = "muratsblog"      #  PLEASE ENTER YOUR FIRST BUCKET NAME
 }
 
 variable "s3-failover" {
-  default = "capstone.melek-alan.com"    # PLEASE ENTER YOUR SECOND BUCKET NAME IT MUST BE SAME NAME WITH YOUR SUBDOMAIN NAME
+  default = "capstone.muratyarali.com"    # PLEASE ENTER YOUR SECOND BUCKET NAME IT MUST BE SAME NAME WITH YOUR SUBDOMAIN NAME
 }
 
 
@@ -81,11 +81,11 @@ variable "S3websiteendpoint" {
 }
 
 variable "domain_name" {
-  default = "melek-alan.com"   #  PLEASE ENTER YOUR DOMAİN NAME
+  default = "muratyarali.com"   #  PLEASE ENTER YOUR DOMAİN NAME
 }
 
 variable "subdomain_name" {
-  default = "capstone.melek-alan.com"    #  PLEASE ENTER YOUR FULL SUBDOMAİN NAME
+  default = "capstone.muratyarali.com"    #  PLEASE ENTER YOUR FULL SUBDOMAİN NAME
 }
 variable "awsAccount" {
   default = "XXXXXXXXXXXX"    # PLEASE ENTER YOUR AWS ACCOUNT ID WİTHOUT '-'

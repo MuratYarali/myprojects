@@ -5,7 +5,7 @@ apt-get install git -y
 apt-get install python3 -y
 cd /home/ubuntu/
 TOKEN="XXXXXXXXXXXXXXXXXXXXXXXX"   #  PLEASE ENTER YOUR TOKEN
-git clone https://$TOKEN@github.com/MelekAlan/capstone-tf.git 
+git clone https://$TOKEN@github.com/MuratYarali/capstone-tf.git 
 cd /home/ubuntu/capstone-tf
 apt install python3-pip -y
 apt-get install python3.7-dev libmysqlclient-dev -y

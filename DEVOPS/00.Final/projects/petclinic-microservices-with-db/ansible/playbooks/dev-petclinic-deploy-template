@@ -1,0 +1,28 @@
+- hosts: role_master
+  tasks:
+
+  - name: Create .docker folder
+    file:
+      path: /home/ubuntu/.docker
+      state: directory
+      mode: '0755'
+
+  - name: copy the docker config file
+    become: yes
+    copy: 
+      src: $JENKINS_HOME/.docker/config.json
+      dest: /home/ubuntu/.docker/config.json
+
+  - name: deploy petclinic application
+    shell: |
+      helm plugin install https://github.com/hypnoglow/helm-s3.git
+      kubectl create ns petclinic-dev
+      kubectl delete secret regcred -n petclinic-dev || true
+      kubectl create secret generic regcred -n petclinic-dev \
+        --from-file=.dockerconfigjson=/home/ubuntu/.docker/config.json \
+        --type=kubernetes.io/dockerconfigjson
+      AWS_REGION=$AWS_REGION helm repo add stable-petclinic s3://petclinic-helm-charts-murat/stable/myapp/
+      AWS_REGION=$AWS_REGION helm repo update
+      AWS_REGION=$AWS_REGION helm upgrade --install \
+        petclinic-app-release stable-petclinic/petclinic_chart --version ${BUILD_NUMBER} \
+        --namespace petclinic-dev

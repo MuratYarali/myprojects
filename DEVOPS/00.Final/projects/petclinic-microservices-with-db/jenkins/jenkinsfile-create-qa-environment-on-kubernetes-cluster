@@ -1,0 +1,46 @@
+pipeline {
+    agent any
+    environment {
+        PATH=sh(script:"echo $PATH:/usr/local/bin", returnStdout:true).trim()
+        APP_NAME="petclinic"
+        AWS_REGION="us-east-1"
+        ANS_KEYPAIR="matt-${APP_NAME}-qa.key"
+        ANSIBLE_PRIVATE_KEY_FILE="${JENKINS_HOME}/.ssh/${ANS_KEYPAIR}"
+        ANSIBLE_HOST_KEY_CHECKING="False"
+    }
+    stages {
+        stage('Create QA Automation Infrastructure') {
+            steps {
+                echo 'Creating QA Automation Infrastructure for QA Environment'
+                sh """
+                    cd infrastructure/qa-k8s-terraform
+                    sed -i "s/mattkey/$ANS_KEYPAIR/g" main.tf
+                    terraform init
+                    terraform apply -auto-approve -no-color
+                """
+                script {
+                    echo "Kubernetes Master is not UP and running yet."
+                    env.id = sh(script: 'aws ec2 describe-instances --filters Name=tag-value,Values=master Name=tag-value,Values=tera-kube-ans Name=instance-state-name,Values=running --query Reservations[*].Instances[*].[InstanceId] --output text',  returnStdout:true).trim()
+                    sh 'aws ec2 wait instance-status-ok --instance-ids $id'
+                }
+            }
+        }
+
+        stage('Create Kubernetes Cluster for QA Automation Build') {
+            steps {
+                echo "Setup Kubernetes Cluster for QA Automation Build for ${APP_NAME} App"
+                sh "ansible-playbook -i ${WORKSPACE}/ansible/inventory/qa_stack_dynamic_inventory_aws_ec2.yaml ${WORKSPACE}/ansible/playbooks/k8s_setup.yaml"
+            }
+        }
+      }
+
+    post {
+        failure {
+            echo 'Tear down the Kubernetes Cluster infrastructure'
+            sh """
+            cd ${WORKSPACE}/infrastructure/qa-k8s-terraform
+            terraform destroy -auto-approve -no-color
+            """
+        }
+    }
+}

@@ -1,0 +1,164 @@
+---
+- hosts: all
+  become: true
+  tasks:
+
+  - name: change hostnames
+    shell: "hostnamectl set-hostname {{ hostvars[inventory_hostname]['private_dns_name'] }}"
+
+  - name: swap off
+    shell: |
+      free -m
+      swapoff -a && sed -i '/ swap / s/^/#/' /etc/fstab
+
+  - name: Enable the nodes to see bridged traffic
+    shell: |
+      cat << EOF | sudo tee /etc/sysctl.d/k8s.conf
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      EOF
+      sysctl --system
+
+  - name: update apt-get
+    shell: apt-get update
+
+  - name: Install packages that allow apt to be used over HTTPS
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: yes
+    vars:
+      packages:
+      - apt-transport-https  
+      - curl
+      - ca-certificates
+
+  - name: update apt-get and install kube packages
+    shell: |
+      curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - && \
+      echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+      apt-get update -q && \
+      apt-get install -qy kubelet=1.23.5-00 kubectl=1.23.5-00 kubeadm=1.23.5-00 docker.io
+
+  - name: Add ubuntu to docker group
+    user:
+      name: ubuntu
+      group: docker
+
+  - name: Restart docker and enable
+    service:
+      name: docker
+      state: restarted
+      enabled: yes
+
+  # change the Docker cgroup driver by creating a configuration file `/etc/docker/daemon.json` 
+  # and adding the following line then restart deamon, docker and kubelet
+
+  - name: change the Docker cgroup
+    shell: |
+      echo '{"exec-opts": ["native.cgroupdriver=systemd"]}' | sudo tee /etc/docker/daemon.json
+      sudo systemctl daemon-reload
+      sudo systemctl restart docker
+      sudo systemctl restart kubelet
+
+
+- hosts: role_master
+  tasks:
+      
+  - name: pull kubernetes images before installation
+    become: yes
+    shell: kubeadm config images pull
+
+  - name: copy the configuration
+    become: yes
+    copy: 
+      src: ./clusterconfig-base.yml
+      dest: /home/ubuntu/
+  
+  - name: get gettext-base
+    become: true
+    apt:
+      package: gettext-base
+      state: present
+
+  - name: change controlplane_endpoint and produce the clusterconfig.yml file
+    shell: |
+      export CONTROLPLANE_ENDPOINT={{ hostvars[inventory_hostname]['private_ip_address'] }}
+      envsubst < /home/ubuntu/clusterconfig-base.yml > /home/ubuntu/clusterconfig.yml
+
+  - name: initialize the Kubernetes cluster using kubeadm
+    become: true
+    shell: |
+      kubeadm init --config /home/ubuntu/clusterconfig.yml
+    
+  - name: Setup kubeconfig for ubuntu user
+    become: true
+    command: "{{ item }}"
+    with_items:
+     - mkdir -p /home/ubuntu/.kube
+     - cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+     - chown ubuntu:ubuntu /home/ubuntu/.kube/config
+
+  - name: Install flannel pod network
+    shell: kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
+
+  - name: Generate join command
+    become: true
+    command: kubeadm token create --print-join-command
+    register: join_command_for_workers
+
+  - debug: msg='{{ join_command_for_workers.stdout.strip() }}'
+
+  - name: register join command for workers
+    add_host:
+      name: "kube_master"
+      worker_join: "{{ join_command_for_workers.stdout.strip() }}"
+
+
+- hosts: role_worker
+  become: true
+  tasks:
+
+  - name: Join workers to cluster
+    shell: "{{ hostvars['kube_master']['worker_join'] }}"
+    register: result_of_joining
+
+
+- hosts: role_master
+  become: false
+  tasks:
+
+  - name: Patch the instances
+    become: false
+    shell: |
+      cd /home/ubuntu
+      kubectl patch node {{ hostvars[groups['role_master'][0]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_master'][0]]['instance_id'] }}" }}'
+      kubectl patch node {{ hostvars[groups['role_worker'][0]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_worker'][0]]['instance_id'] }}" }}'
+      kubectl patch node {{ hostvars[groups['role_worker'][1]]['private_dns_name'] }} -p '{"spec":{"providerID":"aws:///us-east-1a/{{ hostvars[groups['role_worker'][1]]['instance_id'] }}" }}'
+
+  - name: Deploy the required cloud-controller-manager 
+    shell: |
+      cd /home/ubuntu
+      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+      chmod 777 get_helm.sh
+      ./get_helm.sh
+      helm repo add aws-cloud-controller-manager https://kubernetes.github.io/cloud-provider-aws
+      helm repo update
+      helm upgrade --install aws-cloud-controller-manager aws-cloud-controller-manager/aws-cloud-controller-manager --set image.tag=v1.20.0-alpha.0
+      
+  - name: Deploy Nginx Ingress 
+    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.2/deploy/static/provider/aws/deploy.yaml
+
+  - name: Deploy AWS CSI Driver
+    become: false
+    shell: kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable"
+
+  - name: copy the storage.yml file
+    become: yes
+    copy: 
+      src: ./storage.yml
+      dest: /home/ubuntu/
+
+  - name: create StorageClass object
+    become: false
+    shell: kubectl apply -f storage.yml
